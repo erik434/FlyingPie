@@ -234,3 +234,9 @@ _Pvt_Extensions
 
 # FAKE - F# Make
 .fake/
+
+# FlyingPie-specific ignores
+client_secret.json
+Todo.txt
+FlyingPie.config
+packages/
