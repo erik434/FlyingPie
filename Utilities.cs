@@ -53,7 +53,7 @@ namespace FlyingPie
         public static SecureString PromptForEmailPassword()
         {
             bool done = false;
-            Console.Write("First-time setup: what is the password for sending email? ");
+            Console.Write("First-time setup: what is the (app-specific) password for sending email? ");
             var password = new SecureString();
 
             while (!done)
