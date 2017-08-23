@@ -1,4 +1,4 @@
-# FlyingPie
+# Purpose
 This application checks the [Flying Pie website](http://www.flyingpie.com/its-your-day.htm) for their latest "**It's Your Day**" names. It updates a Google calendar with the names of the lucky people for each day and sends email notifications when new names are added.
 
 # Setup
