@@ -67,7 +67,7 @@ namespace FlyingPie
         {
             var parser = new HtmlParser();
             var document = parser.Parse(html);
-            var events = document.QuerySelectorAll("#dayname p.name").Where(e => !string.IsNullOrWhiteSpace(e.TextContent)).Select(ParseElementToEvent).ToList();
+            var events = document.QuerySelectorAll("#dayname p").Where(e => !string.IsNullOrWhiteSpace(e.TextContent)).Select(ParseElementToEvent).ToList();
 
             CheckEvents(events);
 
@@ -79,6 +79,12 @@ namespace FlyingPie
         /// </summary>
         private static void CheckEvents(IList<IydEvent> events)
         {
+            //If no events were found, they probably changed their website and this code needs to be updated!
+            if (!events.Any())
+            {
+                throw new InvalidDataException("No events were found! Did Flying Pie change their website?");
+            }
+
             var now = DateTime.Now;
             DateTime? lastDate = null;
             foreach (var iydEvent in events)
