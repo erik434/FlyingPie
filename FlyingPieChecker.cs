@@ -67,17 +67,59 @@ namespace FlyingPie
         {
             var parser = new HtmlParser();
             var document = parser.Parse(html);
-            var events = document.QuerySelectorAll("#dayname p").Where(e => !string.IsNullOrWhiteSpace(e.TextContent)).Select(ParseElementToEvent).ToList();
 
-            CheckEvents(events);
+            //Get the main IYD element and then deal with their messy html to extract the actual events
+            var node = document.QuerySelector("#dayname");
+            node.QuerySelector(".titreday")?.Remove(); //Remove this title element if it exists to clean up what we pass in to the helper function.
+
+            List<IydEvent> events = new List<IydEvent>();
+            EventParserHelper(node, events);
+
+            SanityCheckEvents(events);
 
             return events;
         }
 
         /// <summary>
+        /// Recurses over all nodes under the given node to find events and adds them to the given events list.
+        /// </summary>
+        private static void EventParserHelper(INode node, List<IydEvent> events)
+        {
+            //Take a copy of the child nodes so when we remove them we don't mess up the enumerator
+            foreach (var child in node.ChildNodes)
+            {
+                //Recurse first
+                EventParserHelper(child, events);
+
+                //Then try to extract an event from this child
+                ParseElementToEvent(child, events);
+            }
+        }
+
+        /// <summary>
+        /// Parses the given DOM node to an IydEvent and adds it to the given list.
+        /// Ignores nodes which are not of type Text, or contain just whitespace.
+        /// </summary>
+        private static void ParseElementToEvent(INode node, List<IydEvent> events)
+        {
+            if (node.NodeType != NodeType.Text) return; //Ignore everything except actual text.
+            if (string.IsNullOrWhiteSpace(node.TextContent)) return; //Ignore empty/whitespace nodes.
+
+            var regex = new Regex(@"(?<Date>[\d/]+):[\s]+(?<Name>.+)", RegexOptions.IgnoreCase);
+            var matches = regex.Matches(node.TextContent);
+            if (matches.Count != 1) throw new ArgumentException($"Failed parsing '{node.TextContent}'");
+
+            var match = matches[0];
+            var date = DateTime.Parse(match.Groups["Date"].Value);
+
+            var iydEvent = new IydEvent(date, match.Groups["Name"].Value);
+            events.Add(iydEvent);
+        }
+
+        /// <summary>
         /// Checks the list of events for problems, fixing them if possible.
         /// </summary>
-        private static void CheckEvents(IList<IydEvent> events)
+        private static void SanityCheckEvents(List<IydEvent> events)
         {
             //If no events were found, they probably changed their website and this code needs to be updated!
             if (!events.Any())
@@ -105,21 +147,6 @@ namespace FlyingPie
                 }
                 lastDate = date;
             }
-        }
-
-        /// <summary>
-        /// Parses the given DOM element to an IydEvent - may need updated if Flying Pie changes their website layout.
-        /// </summary>
-        private static IydEvent ParseElementToEvent(IElement element)
-        {
-            var regex = new Regex(@"(?<Date>[\d/]+):[\s]+(?<Name>.+)", RegexOptions.IgnoreCase);
-            var matches = regex.Matches(element.TextContent);
-            if (matches.Count != 1) throw new ArgumentException($"Failed parsing '{element.TextContent}'");
-
-            var match = matches[0];
-            var date = DateTime.Parse(match.Groups["Date"].Value);
-
-            return new IydEvent(date, match.Groups["Name"].Value);
         }
     }
 }
