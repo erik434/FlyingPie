@@ -138,5 +138,19 @@ namespace FlyingPie
             }
             return returnValue;
         }
+
+        private static TimeZoneInfo FlyingPieTimeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Mountain Standard Time");
+
+        public static DateTime FlyingPieLocalDateToUtcDateTime(int localYear, int localMonth, int localDay)
+        {
+            //This date will have an unspecified time zone, so we have to convert it to UTC using an explicit time zone below,
+            // instead of using the ToUniversalTime() method (which I think would assume it's in the local time zone - which
+            // won't necessarily match Flying Pie time).
+            var dateUnspecified = new DateTime(localYear, localMonth, localDay);
+
+            //Use Flying Pie's time zone info to convert the above zone-less DateTime to UTC
+            var utcDateTime = TimeZoneInfo.ConvertTimeToUtc(dateUnspecified, FlyingPieTimeZoneInfo);
+            return utcDateTime;
+        }
     }
 }

@@ -75,8 +75,9 @@ namespace FlyingPie
             var eventsRequest = Events.List(CurrentCalendar.Id);
             eventsRequest.SingleEvents = true;
             eventsRequest.ShowDeleted = false;
-            eventsRequest.TimeMin = date;
-            eventsRequest.TimeMax = date.AddDays(1);
+            eventsRequest.TimeMin = Utilities.FlyingPieLocalDateToUtcDateTime(date.Year, date.Month, date.Day);
+            var nextDay = date.AddDays(1);
+            eventsRequest.TimeMax = Utilities.FlyingPieLocalDateToUtcDateTime(nextDay.Year, nextDay.Month, nextDay.Day);
 
             return _retryPolicy.ExecuteAction(() => eventsRequest.Execute().Items.FirstOrDefault());
         }

@@ -131,22 +131,37 @@ namespace FlyingPie
             DateTime? lastDate = null;
             foreach (var iydEvent in events)
             {
-                //If the date is too far away, there may be a typo in the year - fix it to the current year.
-                //They did it once already (mm/dd/15 instead of mm/dd/16) - they may do it again.
                 var date = iydEvent.Date;
-                if ((now - date).TotalDays > 30)
+
+                //If the dates aren't all consecutive, they may have made a mess of the dates. They sometimes seem to input the wrong year, so first try to
+                // adjust the year on the current date to see if that makes it consecutive. If that fails, give up and have a human look at what's going on.
+                if (!AreDatesConsecutive(lastDate, date))
                 {
-                    date = new DateTime(now.Year, date.Month, date.Day);
+                    //Try using the same year as the last date.
+                    date = new DateTime(lastDate.Value.Year, date.Month, date.Day);
+                    if (!AreDatesConsecutive(lastDate, date))
+                    {
+                        //If that doesn't work, try one past it (in case we're at a year transition).
+                        date = new DateTime(lastDate.Value.Year + 1, date.Month, date.Day);
+                        if (!AreDatesConsecutive(lastDate, date))
+                        {
+                            throw new InvalidDataException(string.Format("Dates from Flying Pie are not consecutive! What's wrong? lastDate: {0}, date: {1}", lastDate, iydEvent.Date));
+                        }
+                    }
+
+                    //If we get here, we seem to have fixed the problem. Save it!
                     iydEvent.Date = date;
                 }
 
-                //If the dates aren't all consecutive, they may have made a mess of the dates - should have a human look at this
-                if (lastDate.HasValue && !lastDate.Value.AddDays(1).Equals(date))
-                {
-                    throw new InvalidDataException("Dates from Flying Pie are not consecutive! What's wrong?");
-                }
                 lastDate = date;
             }
+        }
+
+        private static bool AreDatesConsecutive(DateTime? lastDate, DateTime date)
+        {
+            //Return false if there is a previous date to compare with and they aren't consecutive.
+            //Otherwise (if they are consecutive, or if there is no previous date to compare with, return true.
+            return !(lastDate.HasValue && !lastDate.Value.AddDays(1).Equals(date));
         }
     }
 }
