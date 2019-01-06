@@ -3,12 +3,16 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using AngleSharp.Dom;
 using AngleSharp.Parser.Html;
+using CurlThin;
+using CurlThin.Enums;
 using log4net;
+using System.Runtime.InteropServices;
+using System.Text;
+using CurlThin.Native;
 
 namespace FlyingPie
 {
@@ -53,10 +57,42 @@ namespace FlyingPie
         /// </summary>
         private static string GetSiteHtml()
         {
-            using (var client = new WebClient())
+            string iydUrl = ConfigurationManager.AppSettings["ItsYourDayUrl"];
+
+            CurlResources.Init();
+            var global = CurlNative.Init();
+            var easy = CurlNative.Easy.Init();
+            try
             {
-                string iydUrl = ConfigurationManager.AppSettings["ItsYourDayUrl"];
-                return client.DownloadString(iydUrl);
+                CurlNative.Easy.SetOpt(easy, CURLoption.URL, iydUrl);
+                CurlNative.Easy.SetOpt(easy, CURLoption.CAINFO, "curl-ca-bundle.crt");
+
+                var stream = new MemoryStream();
+                CurlNative.Easy.SetOpt(easy, CURLoption.WRITEFUNCTION, (data, size, nmemb, user) =>
+                {
+                    var length = (int)size * (int)nmemb;
+                    var buffer = new byte[length];
+                    Marshal.Copy(data, buffer, 0, length);
+                    stream.Write(buffer, 0, length);
+                    return (UIntPtr)length;
+                });
+
+                var result = CurlNative.Easy.Perform(easy);
+                if (result != CURLcode.OK)
+                {
+                    throw new Exception($"CURL failed to fetch HTML! Result: {result}");
+                }
+
+                return Encoding.UTF8.GetString(stream.ToArray());
+            }
+            finally
+            {
+                easy.Dispose();
+
+                if (global == CURLcode.OK)
+                {
+                    CurlNative.Cleanup();
+                }
             }
         }
 
@@ -69,8 +105,7 @@ namespace FlyingPie
             var document = parser.Parse(html);
 
             //Get the main IYD element and then deal with their messy html to extract the actual events
-            var node = document.QuerySelector("#dayname");
-            node.QuerySelector(".titreday")?.Remove(); //Remove this title element if it exists to clean up what we pass in to the helper function.
+            var node = document.QuerySelector(".hmy-left .txtcontent");
 
             List<IydEvent> events = new List<IydEvent>();
             EventParserHelper(node, events);
