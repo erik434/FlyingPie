@@ -6,7 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using AngleSharp.Dom;
-using AngleSharp.Parser.Html;
+using AngleSharp.Html.Parser;
 using CurlThin;
 using CurlThin.Enums;
 using log4net;
@@ -102,7 +102,7 @@ namespace FlyingPie
         private static List<IydEvent> ParseEventsFromHtml(string html)
         {
             var parser = new HtmlParser();
-            var document = parser.Parse(html);
+            var document = parser.ParseDocument(html);
 
             //Get the main IYD element and then deal with their messy html to extract the actual events
             var node = document.QuerySelector(".hmy-left .txtcontent");
