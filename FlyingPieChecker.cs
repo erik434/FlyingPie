@@ -140,12 +140,15 @@ namespace FlyingPie
             if (node.NodeType != NodeType.Text) return; //Ignore everything except actual text.
             if (string.IsNullOrWhiteSpace(node.TextContent)) return; //Ignore empty/whitespace nodes.
 
-            var regex = new Regex(@"(?<Date>[\d/]+):[\s]+(?<Name>.+)", RegexOptions.IgnoreCase);
+            var regex = new Regex(@"(?<Month>[\d]+)[\D]+(?<Day>[\d]+)[\D]+(?<Year>[\d]+)[\s:]*(?<Name>.+)", RegexOptions.IgnoreCase);
             var matches = regex.Matches(node.TextContent);
             if (matches.Count != 1) throw new ArgumentException($"Failed parsing '{node.TextContent}'");
-
             var match = matches[0];
-            var date = DateTime.Parse(match.Groups["Date"].Value);
+
+            //Account for human error in the dates (typos etc.) by picking out the M/D/Y numbers separately using a more lenient regex,
+            //then stuff them into a properly-formatted string that DateTime.Parse will accept.
+            var dateString = $"{match.Groups["Month"]}/{match.Groups["Day"]}/{match.Groups["Year"]}";
+            var date = DateTime.Parse(dateString);
 
             var iydEvent = new IydEvent(date, match.Groups["Name"].Value);
             events.Add(iydEvent);
