@@ -11,6 +11,14 @@ namespace FlyingPie
     static class Utilities
     {
         private const string EmailPasswordConfigKey = "EmailPassword";
+        private static readonly byte[] Entropy;
+        private static readonly TimeZoneInfo FlyingPieTimeZoneInfo;
+
+        static Utilities()
+        {
+            Entropy = Encoding.Unicode.GetBytes(ConfigurationManager.AppSettings["SaltyString"]);
+            FlyingPieTimeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Mountain Standard Time");
+        }
 
         public static void SetAppConfig(string key, string value)
         {
@@ -86,8 +94,6 @@ namespace FlyingPie
             return password;
         }
 
-        private static readonly byte[] Entropy = Encoding.Unicode.GetBytes(ConfigurationManager.AppSettings["SaltyString"]);
-
         private static string EncryptString(SecureString input)
         {
             byte[] encryptedData = ProtectedData.Protect(
@@ -138,8 +144,6 @@ namespace FlyingPie
             }
             return returnValue;
         }
-
-        private static TimeZoneInfo FlyingPieTimeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Mountain Standard Time");
 
         public static DateTime FlyingPieLocalDateToUtcDateTime(int localYear, int localMonth, int localDay)
         {

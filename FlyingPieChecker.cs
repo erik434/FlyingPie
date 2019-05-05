@@ -104,11 +104,21 @@ namespace FlyingPie
             var parser = new HtmlParser();
             var document = parser.ParseDocument(html);
 
-            //Get the main IYD element and then deal with their messy html to extract the actual events
-            var node = document.QuerySelector(".hmy-left .txtcontent");
+            //Get the main IYD element
+            var selector = ".hmy-content";
+            var nodes = document.QuerySelectorAll(selector).Where(element => element.TextContent.Contains("IYD"));
+            if (nodes == null || nodes.Count() <= 0)
+            {
+                throw new Exception($"Failed to query selector '{selector}' for content nodes. Has page HTML changed?");
+            }
+            if (nodes.Count() > 1)
+            {
+                throw new Exception($"Got too many results querying selector '{selector}'! Has page HTML changed?");
+            }
 
+            //Traverse the main element's children to extract events
             List<IydEvent> events = new List<IydEvent>();
-            EventParserHelper(node, events);
+            EventParserHelper(nodes.First(), events);
 
             SanityCheckEvents(events);
 
@@ -138,6 +148,7 @@ namespace FlyingPie
         private static void ParseElementToEvent(INode node, List<IydEvent> events)
         {
             if (node.NodeType != NodeType.Text) return; //Ignore everything except actual text.
+            if (node.Parent.NodeName != "P") return; //Ignore any text inside nodes that aren't paragraphs (this skips the H2 "IYD'S NAMES!!" at the start).
             if (string.IsNullOrWhiteSpace(node.TextContent)) return; //Ignore empty/whitespace nodes.
 
             var regex = new Regex(@"(?<Month>[\d]+)[\D]+(?<Day>[\d]+)[\D]+(?<Year>[\d]+)[\s:]*(?<Name>.+)", RegexOptions.IgnoreCase);
@@ -183,12 +194,23 @@ namespace FlyingPie
                         date = new DateTime(lastDate.Value.Year + 1, date.Month, date.Day);
                         if (!AreDatesConsecutive(lastDate, date))
                         {
-                            throw new InvalidDataException(string.Format("Dates from Flying Pie are not consecutive! What's wrong? lastDate: {0}, date: {1}", lastDate, iydEvent.Date));
+                            throw new InvalidDataException($"Dates from Flying Pie are not consecutive! What's wrong? lastDate: {lastDate}, date: {iydEvent.Date}");
                         }
                     }
 
                     //If we get here, we seem to have fixed the problem. Save it!
                     iydEvent.Date = date;
+                }
+
+                //If the date is too many days from now, assume that something may have gone wrong, and abort instead of
+                //possibly overwriting a previous date with the wrong information, or creating a new date too far into the future.
+                //TODO: this will fail when the first date is for example ~a year old due to a mistyped year.
+                //Could we sanity check using the last uploaded event (if any)?
+                //need to do something to make this check work with the above year tweaking
+                var daysFromNow = Math.Abs((now - date).TotalDays);
+                if (daysFromNow > 45)
+                {
+                    throw new InvalidDataException($"Date '{date}' is {daysFromNow} days away from today! This is too big a difference; something may be wrong.");
                 }
 
                 lastDate = date;
