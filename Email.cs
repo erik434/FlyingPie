@@ -22,27 +22,16 @@ namespace FlyingPie
             SendEmail("IYD Notifier Error", body, errorRecipients, false);
         }
 
-        public static void SendNotificationMail(List<IydEvent> events)
+        public static bool SendNotificationMail(string body)
         {
             //TODO: use nice HTML formatting instead of boring plain text - this looks promising for templating: https://github.com/Antaris/RazorEngine
-            if (events.Count == 0)
-            {
-                log.Debug("No events to announce - skipping email notification.");
-                return;
-            }
 
             const string subject = "IYD Update Notification";
-            var body = new StringBuilder();
-            foreach (var e in events)
-            {
-                body.AppendFormat("{0:dddd, MMMM d} - {1}\n", e.Date, e.Name);
-            }
-
             var updateRecipients = ConfigurationManager.AppSettings["UpdateEmails"];
-            SendEmail(subject, body.ToString(), updateRecipients, false);
+            return SendEmail(subject, body, updateRecipients, false);
         }
 
-        private static void SendEmail(string subject, string message, string recipients, bool isHtml)
+        private static bool SendEmail(string subject, string message, string recipients, bool isHtml)
         {
             //TODO: include retries for certain errors? don't want to try indefinitely though
 
@@ -71,11 +60,13 @@ namespace FlyingPie
                 {
                     email.To.Add(recipients);
                     smtp.Send(email);
+                    return true;
                 }
             }
             catch (Exception e)
             {
                 log.ErrorFormat("Failed to send email! Exception:\n{0}", e);
+                return false;
             }
         }
     }

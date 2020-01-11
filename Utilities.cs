@@ -12,12 +12,10 @@ namespace FlyingPie
     {
         private const string EmailPasswordConfigKey = "EmailPassword";
         private static readonly byte[] Entropy;
-        private static readonly TimeZoneInfo FlyingPieTimeZoneInfo;
 
         static Utilities()
         {
             Entropy = Encoding.Unicode.GetBytes(ConfigurationManager.AppSettings["SaltyString"]);
-            FlyingPieTimeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Mountain Standard Time");
         }
 
         public static void SetAppConfig(string key, string value)
@@ -143,18 +141,6 @@ namespace FlyingPie
                 Marshal.ZeroFreeBSTR(ptr);
             }
             return returnValue;
-        }
-
-        public static DateTime FlyingPieLocalDateToUtcDateTime(int localYear, int localMonth, int localDay)
-        {
-            //This date will have an unspecified time zone, so we have to convert it to UTC using an explicit time zone below,
-            // instead of using the ToUniversalTime() method (which I think would assume it's in the local time zone - which
-            // won't necessarily match Flying Pie time).
-            var dateUnspecified = new DateTime(localYear, localMonth, localDay);
-
-            //Use Flying Pie's time zone info to convert the above zone-less DateTime to UTC
-            var utcDateTime = TimeZoneInfo.ConvertTimeToUtc(dateUnspecified, FlyingPieTimeZoneInfo);
-            return utcDateTime;
         }
     }
 }

@@ -4,28 +4,18 @@ namespace FlyingPie
 {
     public class IydEvent
     {
-        public DateTime Date;
+        public DayOfWeek Weekday;
         public string Name;
 
-        public IydEvent(DateTime date, string name)
+        public IydEvent(DayOfWeek weekday, string name)
         {
-            Date = date;
+            Weekday = weekday;
             Name = name;
-        }
-
-        public string GetNameForCalendar()
-        {
-            if (Name.Contains("Gourmet Night"))
-            {
-                return "FP Gourmet Night";
-            }
-
-            return $"IYD: {Name}";
         }
 
         public override string ToString()
         {
-            return $"{Date:d} - {Name}";
+            return $"{Weekday}: {Name}";
         }
     }
 }
