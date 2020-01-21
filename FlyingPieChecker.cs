@@ -31,8 +31,10 @@ namespace FlyingPie
             string oldData = ConfigurationManager.AppSettings[configKey];
             if (oldData != newData)
             {
+                log.Debug("New or changed event data found.");
                 if (Email.SendNotificationMail(newData))
                 {
+                    log.Debug("Notification email sent.");
                     Utilities.SetAppConfig(configKey, newData);
                 }
             }
