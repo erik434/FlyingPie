@@ -1,3 +1,7 @@
+# This repository is archived
+
+Flying Pie seems to have stopped running this event, so I'm no longer maintaining this code.
+
 # Purpose
 This application checks the [Flying Pie website](http://www.flyingpie.com/its-your-day.htm) for their latest "**It's Your Day**" names, and sends email notifications when any changes are made to the list.
 
